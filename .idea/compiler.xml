@@ -6,6 +6,7 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
+        <module name="erika-rpc-core" />
         <module name="erika-rpc-easy" />
         <module name="example-provider" />
         <module name="example-common" />
