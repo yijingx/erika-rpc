@@ -1,5 +1,6 @@
 package com.erika.example.consumer;
 
+import com.erika.erikarpc.proxy.ServiceProxyFactory;
 import com.erika.example.common.model.User;
 import com.erika.example.common.service.UserService;
 

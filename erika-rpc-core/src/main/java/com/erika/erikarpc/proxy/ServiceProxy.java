@@ -1,4 +1,4 @@
-package com.erika.example.consumer;
+package com.erika.erikarpc.proxy;
 
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
@@ -6,8 +6,6 @@ import com.erika.erikarpc.model.RpcRequest;
 import com.erika.erikarpc.model.RpcResponse;
 import com.erika.erikarpc.serializer.JdkSerialzer;
 import com.erika.erikarpc.serializer.Serializer;
-import com.erika.example.common.model.User;
-import com.erika.example.common.service.UserService;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
