@@ -1,0 +1,4 @@
+jdk=com.erika.erikarpc.serializer.JdkSerializer
+hessian=com.erika.erikarpc.serializer.HessianSerializer
+json=com.erika.erikarpc.serializer.JsonSerializer
+kryo=com.erika.erikarpc.serializer.KryoSerializer

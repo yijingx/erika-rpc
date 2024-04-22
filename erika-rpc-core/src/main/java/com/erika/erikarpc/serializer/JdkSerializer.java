@@ -2,7 +2,7 @@ package com.erika.erikarpc.serializer;
 
 import java.io.*;
 
-public class JdkSerialzer implements Serializer{
+public class JdkSerializer implements Serializer{
     @Override
     public <T> byte[] serialize(T object) throws IOException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
