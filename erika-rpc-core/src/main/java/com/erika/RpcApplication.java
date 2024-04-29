@@ -1,7 +1,10 @@
 package com.erika;
 
+import com.erika.erikarpc.config.RegistryConfig;
 import com.erika.erikarpc.config.RpcConfig;
 import com.erika.erikarpc.constant.RpcConstant;
+import com.erika.erikarpc.registry.Registry;
+import com.erika.erikarpc.registry.RegistryFactory;
 import com.erika.erikarpc.utils.ConfigUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -17,6 +20,11 @@ public class RpcApplication {
     public static void init(RpcConfig newRpcConfig){
         rpcConfig = newRpcConfig;
         log.info("rpc init, config = {}", newRpcConfig.toString());
+        // 注册中心初始化
+        RegistryConfig registryConfig = rpcConfig.getRegistryConfig();
+        Registry registry = RegistryFactory.getInstance(registryConfig.getRegistry());
+        registry.init(registryConfig);
+        log.info("registry init, config = {}", registryConfig);
     }
 
     public static void init(){
