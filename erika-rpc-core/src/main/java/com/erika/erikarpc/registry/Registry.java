@@ -18,4 +18,8 @@ public interface Registry {
      */
     List<ServiceMetaInfo> serviceDiscovery(String serviceKey);
     void destroy();
+
+    void hearBeat();
+
+    void watch(String serviceNodeKey);
 }
