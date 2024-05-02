@@ -3,9 +3,11 @@ package com.erika.erikarpc.server.tcp;
 import com.erika.erikarpc.server.HttpServer;
 import com.erika.erikarpc.server.HttpServerHandler;
 import com.erika.erikarpc.server.VertxHttpServer;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.NetServer;
+import io.vertx.core.parsetools.RecordParser;
 
 import javax.swing.plaf.IconUIResource;
 
@@ -21,26 +23,28 @@ public class VertxTcpServer implements HttpServer {
 
         // 处理请求
         server.connectHandler(netSocket -> {
-            netSocket.handler((buffer -> {
-//                byte[] requestData = buffer.getBytes();
-//                byte[] responseData = handleRequest(requestData);
-//                netSocket.write(Buffer.buffer(responseData));
-                String testMessage = "Hello, server! Hello, server! Hello, server! Hello, server!";
-                int messageLength = testMessage.getBytes().length;
-                if(buffer.getBytes().length<messageLength){
-                    System.out.println("半包, length = "+buffer.getBytes().length);
-                    return;
+            RecordParser parser = RecordParser.newFixed(8);
+            parser.setOutput(new Handler<Buffer>() {
+                int size = -1;
+                Buffer resultBuffer = Buffer.buffer();
+                @Override
+                public void handle(Buffer buffer) {
+                    if(-1 == size){
+                        // read message size
+                        size = buffer.getInt(4);
+                        parser.fixedSizeMode(size);
+                        // write
+                        resultBuffer.appendBuffer(buffer);
+                    } else{
+                        resultBuffer.appendBuffer(buffer);
+                        System.out.println(resultBuffer.toString());
+                        parser.fixedSizeMode(8);
+                        size = -1;
+                        resultBuffer = Buffer.buffer();
+                    }
                 }
-                if(buffer.getBytes().length>messageLength){
-                    System.out.println("粘包, length = "+buffer.getBytes().length);
-                    return;
-                }
-                String str = new String(buffer.getBytes(0, messageLength));
-                System.out.println(str);
-                if(testMessage.equals(str)){
-                    System.out.println("good");
-                }
-            }));
+            });
+            netSocket.handler(parser);
         });
 
 //        server.connectHandler(new TcpServerHandler());
