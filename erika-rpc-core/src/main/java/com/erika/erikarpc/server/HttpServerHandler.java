@@ -4,7 +4,6 @@ import com.erika.RpcApplication;
 import com.erika.erikarpc.model.RpcRequest;
 import com.erika.erikarpc.model.RpcResponse;
 import com.erika.erikarpc.registry.LocalRegistry;
-import com.erika.erikarpc.serializer.JdkSerializer;
 import com.erika.erikarpc.serializer.Serializer;
 import com.erika.erikarpc.serializer.SerializerFactory;
 import io.vertx.core.Handler;
