@@ -11,7 +11,10 @@ public class VertxTcpClient {
                 System.out.println("Connected to TCP server");
                 NetSocket socket = netSocketAsyncResult.result();
                 // send data
-                socket.write("Hello, server!");
+//                socket.write("Hello, server!");
+                for (int i = 0; i < 1000; i++) {
+                    socket.write("Hello, server! Hello, server! Hello, server! Hello, server!");
+                }
                 // received response
                 socket.handler(buffer -> {
                     System.out.println("Received response from server: "+buffer.toString());
