@@ -123,7 +123,7 @@ public class SpiLoader {
     public static void main(String[] args) {
         loadAll();
         System.out.println(loaderMap);
-        Serializer serializer = getInstance(Serializer.class, "hessian");
+        Serializer serializer = getInstance(Serializer.class, "c");
         System.out.println(serializer);
     }
 
