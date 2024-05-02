@@ -13,19 +13,13 @@ public class VertxHttpServer implements HttpServer{
 //                    .putHeader("content-type","text-plain")
 //                    .end("Hello from Vert.x HTTP server!");
 //        });
+
+        // 启动 HTTP 服务器并监听指定端口
         server.requestHandler(new HttpServerHandler());
         server.listen(port, result->{
             if(result.succeeded()){
                 System.out.println("Server is now listening on port "+port);
             } else {
-                System.err.println("Failed to start server: "+result.cause());
-            }
-        });
-
-        server.listen(port, result->{
-            if(result.succeeded()){
-                System.out.println("Server is now listening on port "+port);
-            } else{
                 System.err.println("Failed to start server: "+result.cause());
             }
         });
