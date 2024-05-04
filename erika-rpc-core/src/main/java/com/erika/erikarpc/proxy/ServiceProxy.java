@@ -17,16 +17,12 @@ import com.erika.erikarpc.registry.RegistryFactory;
 import com.erika.erikarpc.serializer.JdkSerializer;
 import com.erika.erikarpc.serializer.Serializer;
 import com.erika.erikarpc.serializer.SerializerFactory;
-import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.net.NetClient;
-import io.vertx.core.net.NetSocket;
+import com.erika.erikarpc.server.tcp.VertxTcpClient;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 public class ServiceProxy implements InvocationHandler {
     @Override
@@ -57,55 +53,7 @@ public class ServiceProxy implements InvocationHandler {
 
             ServiceMetaInfo selectedServiceMetaInfo = serviceMetaInfoList.get(0);
 
-            // http request
-//            try(HttpResponse httpResponse = HttpRequest.post(selectedServiceMetaInfo.getServiceAddress())
-//                    .body(bodyBytes)
-//                    .execute()){
-//                byte[] result = httpResponse.bodyBytes();
-//                RpcResponse rpcResponse = serializer.deserialize(result, RpcResponse.class);
-//                return rpcResponse.getData();
-//            }
-            //TCP request
-            Vertx vertx = Vertx.vertx();
-            NetClient netClient = vertx.createNetClient();
-            CompletableFuture<RpcResponse> responseCompletableFuture = new CompletableFuture<>();
-            netClient.connect(selectedServiceMetaInfo.getServicePort(),selectedServiceMetaInfo.getServiceHost(),
-                    netSocketAsyncResult -> {
-                        if(netSocketAsyncResult.succeeded()){
-                            System.out.println("Connected to TCP server");
-                            NetSocket socket = netSocketAsyncResult.result();
-                            // send data, build message
-                            ProtocolMessage<RpcRequest> protocolMessage = new ProtocolMessage<>();
-                            ProtocolMessage.Header header = new ProtocolMessage.Header();
-                            header.setMagic(ProtocolConstant.PROTOCOL_MAGIC);
-                            header.setVersion(ProtocolConstant.PROTOCOL_VERSION);
-                            header.setSerializer((byte) ProtocolMessageSerializerEnum.getEnumByValue(RpcApplication.getRpcConfig().getSerializer()).getKey());
-                            header.setType((byte) ProtocolMessageTypeEnum.REQUEST.getKey());
-                            header.setRequestId(IdUtil.getSnowflakeNextId());
-                            protocolMessage.setHeader(header);
-                            protocolMessage.setBody(rpcRequest);
-                            // encode request
-                            try{
-                                Buffer encodeBuffer = ProtocolMessageEncoder.encode(protocolMessage);
-                                socket.write(encodeBuffer);
-                            } catch (IOException e){
-                                throw new RuntimeException("Protocol message encode error");
-                            }
-                            // receive response
-                            socket.handler(buffer -> {
-                                try{
-                                    ProtocolMessage<RpcResponse> rpcResponseProtocolMessage = (ProtocolMessage<RpcResponse>) ProtocolMessageDecoder.decode(buffer);
-                                    responseCompletableFuture.complete(rpcResponseProtocolMessage.getBody());
-                                }catch (IOException e){
-                                    throw new RuntimeException("Protocol message decode error");
-                                }
-                            });
-                        } else{
-                            System.err.println("Failed to connect to TCP server");
-                        }
-                    });
-            RpcResponse rpcResponse = responseCompletableFuture.get();
-            netClient.close();
+            RpcResponse rpcResponse = VertxTcpClient.doRequest(rpcRequest, selectedServiceMetaInfo);
             return rpcResponse.getData();
         }catch (IOException e){
             e.printStackTrace();
