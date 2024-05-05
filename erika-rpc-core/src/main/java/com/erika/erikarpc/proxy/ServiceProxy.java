@@ -8,6 +8,8 @@ import com.erika.RpcApplication;
 import com.erika.erikarpc.config.RpcConfig;
 import com.erika.erikarpc.constant.ProtocolConstant;
 import com.erika.erikarpc.constant.RpcConstant;
+import com.erika.erikarpc.loadbalancer.LoadBalancer;
+import com.erika.erikarpc.loadbalancer.LoadBalancerFactory;
 import com.erika.erikarpc.model.RpcRequest;
 import com.erika.erikarpc.model.RpcResponse;
 import com.erika.erikarpc.model.ServiceMetaInfo;
@@ -22,7 +24,9 @@ import com.erika.erikarpc.server.tcp.VertxTcpClient;
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ServiceProxy implements InvocationHandler {
     @Override
@@ -51,7 +55,10 @@ public class ServiceProxy implements InvocationHandler {
                 throw new RuntimeException("暂无服务地址");
             }
 
-            ServiceMetaInfo selectedServiceMetaInfo = serviceMetaInfoList.get(0);
+            LoadBalancer loadBalancer = LoadBalancerFactory.getInstance(rpcConfig.getLoadBalancer());
+            Map<String, Object> requestParams = new HashMap<>();
+            requestParams.put("methodName", rpcRequest.getMethodName());
+            ServiceMetaInfo selectedServiceMetaInfo = loadBalancer.select(requestParams,serviceMetaInfoList);
 
             RpcResponse rpcResponse = VertxTcpClient.doRequest(rpcRequest, selectedServiceMetaInfo);
             return rpcResponse.getData();

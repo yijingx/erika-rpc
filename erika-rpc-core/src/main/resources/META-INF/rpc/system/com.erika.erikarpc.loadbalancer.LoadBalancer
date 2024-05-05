@@ -1,0 +1,3 @@
+roundRobin=com.erika.erikarpc.loadbalancer.RoundRobinLoadBalancer
+random=com.erika.erikarpc.loadbalancer.RandomLoadBalancer
+consistentHash=com.erika.erikarpc.loadbalancer.ConsistentHashLoadBalancer
