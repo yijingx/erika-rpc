@@ -38,6 +38,7 @@ public class VertxTcpServer implements HttpServer {
                     } else{
                         resultBuffer.appendBuffer(buffer);
                         System.out.println(resultBuffer.toString());
+                        netSocket.write(resultBuffer);
                         parser.fixedSizeMode(8);
                         size = -1;
                         resultBuffer = Buffer.buffer();

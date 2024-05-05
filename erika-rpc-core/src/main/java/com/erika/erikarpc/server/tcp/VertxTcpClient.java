@@ -68,7 +68,7 @@ public class VertxTcpClient {
                 NetSocket socket = netSocketAsyncResult.result();
                 // send data
 //                socket.write("Hello, server!");
-                for (int i = 0; i < 1000; i++) {
+                for (int i = 0; i < 100; i++) {
                     Buffer buffer = Buffer.buffer();
                     String str = "Hello, server! Hello, server! Hello, server! Hello, server!";
                     buffer.appendInt(0);
