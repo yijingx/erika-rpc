@@ -3,10 +3,7 @@ package com.erika.erikarpc.server.tcp;
 import com.erika.RpcApplication;
 import com.erika.erikarpc.model.RpcRequest;
 import com.erika.erikarpc.model.RpcResponse;
-import com.erika.erikarpc.protocol.ProtocolMessage;
-import com.erika.erikarpc.protocol.ProtocolMessageDecoder;
-import com.erika.erikarpc.protocol.ProtocolMessageEncoder;
-import com.erika.erikarpc.protocol.ProtocolMessageTypeEnum;
+import com.erika.erikarpc.protocol.*;
 import com.erika.erikarpc.registry.LocalRegistry;
 import com.erika.erikarpc.serializer.Serializer;
 import com.erika.erikarpc.serializer.SerializerFactory;
@@ -21,27 +18,22 @@ import java.lang.reflect.Method;
 
 public class TcpServerHandler implements Handler<NetSocket> {
     @Override
-    public void handle(NetSocket netSocket) {
-        // 指定序列化器
-//        final Serializer serializer = SerializerFactory.getInstance(RpcApplication.getRpcConfig().getSerializer());
-//
-//        System.out.println("Received request: "+ request.method()+" "+request.uri());
-
-        // handle connection
-        netSocket.handler(buffer->{
-            // receive request, decode
+    public void handle(NetSocket socket) {
+        TcpBufferHandlerWrapper bufferHandlerWrapper = new TcpBufferHandlerWrapper(buffer -> {
+            // 接受请求，解码
             ProtocolMessage<RpcRequest> protocolMessage;
-            try{
+            try {
                 protocolMessage = (ProtocolMessage<RpcRequest>) ProtocolMessageDecoder.decode(buffer);
-            } catch (Exception e){
-                throw new RuntimeException("protocol message decode error");
+            } catch (IOException e) {
+                throw new RuntimeException("协议消息解码错误");
             }
             RpcRequest rpcRequest = protocolMessage.getBody();
+            ProtocolMessage.Header header = protocolMessage.getHeader();
 
-            // handle request, build response object
+            // 处理请求
+            // 构造响应结果对象
             RpcResponse rpcResponse = new RpcResponse();
-
-            try{
+            try {
                 // 获取要调用的服务实现类，通过反射调用
                 Class<?> implClass = LocalRegistry.get(rpcRequest.getServiceName());
                 Method method = implClass.getMethod(rpcRequest.getMethodName(), rpcRequest.getParameterTypes());
@@ -50,22 +42,23 @@ public class TcpServerHandler implements Handler<NetSocket> {
                 rpcResponse.setData(result);
                 rpcResponse.setDataType(method.getReturnType());
                 rpcResponse.setMessage("ok");
-            } catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
                 rpcResponse.setMessage(e.getMessage());
                 rpcResponse.setException(e);
             }
 
-            // send response and encode
-            ProtocolMessage.Header header = protocolMessage.getHeader();
+            // 发送响应，编码
             header.setType((byte) ProtocolMessageTypeEnum.RESPONSE.getKey());
+            header.setStatus((byte) ProtocolMessageStatusEnum.OK.getValue());
             ProtocolMessage<RpcResponse> responseProtocolMessage = new ProtocolMessage<>(header, rpcResponse);
-            try{
+            try {
                 Buffer encode = ProtocolMessageEncoder.encode(responseProtocolMessage);
-                netSocket.write(encode);
-            } catch (IOException e){
-                throw new RuntimeException("Protocol Message encode error");
+                socket.write(encode);
+            } catch (IOException e) {
+                throw new RuntimeException("协议消息编码错误");
             }
         });
+        socket.handler(bufferHandlerWrapper);
     }
 }
