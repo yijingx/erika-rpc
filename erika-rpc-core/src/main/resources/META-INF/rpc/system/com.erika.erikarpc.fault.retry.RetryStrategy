@@ -1,0 +1,2 @@
+no=com.erika.erikarpc.fault.retry.NoRetryStrategy
+fixedInterval=com.erika.erikarpc.fault.retry.FixedIntervalRetryStrategy

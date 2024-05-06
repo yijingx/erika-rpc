@@ -8,6 +8,8 @@ import com.erika.RpcApplication;
 import com.erika.erikarpc.config.RpcConfig;
 import com.erika.erikarpc.constant.ProtocolConstant;
 import com.erika.erikarpc.constant.RpcConstant;
+import com.erika.erikarpc.fault.retry.RetryStrategy;
+import com.erika.erikarpc.fault.retry.RetryStrategyFactory;
 import com.erika.erikarpc.loadbalancer.LoadBalancer;
 import com.erika.erikarpc.loadbalancer.LoadBalancerFactory;
 import com.erika.erikarpc.model.RpcRequest;
@@ -60,7 +62,10 @@ public class ServiceProxy implements InvocationHandler {
             requestParams.put("methodName", rpcRequest.getMethodName());
             ServiceMetaInfo selectedServiceMetaInfo = loadBalancer.select(requestParams,serviceMetaInfoList);
 
-            RpcResponse rpcResponse = VertxTcpClient.doRequest(rpcRequest, selectedServiceMetaInfo);
+            RetryStrategy retryStrategy = RetryStrategyFactory.getInstance(rpcConfig.getRetryStrategy());
+            RpcResponse rpcResponse = retryStrategy.doRetry(()->
+                    VertxTcpClient.doRequest(rpcRequest, selectedServiceMetaInfo)
+            );
             return rpcResponse.getData();
         }catch (IOException e){
             e.printStackTrace();
