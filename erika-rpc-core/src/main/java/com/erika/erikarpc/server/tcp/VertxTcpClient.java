@@ -43,16 +43,20 @@ public class VertxTcpClient {
                     throw new RuntimeException("Protocol message encode error");
                 }
                 // receive response
-                socket.handler(buffer -> {
-                    try {
-                        ProtocolMessage<RpcResponse> rpcResponseProtocolMessage = (ProtocolMessage<RpcResponse>) ProtocolMessageDecoder.decode(buffer);
-                        responseCompletableFuture.complete(rpcResponseProtocolMessage.getBody());
-                    } catch (IOException e) {
-                        throw new RuntimeException("Protocol message decode error");
-                    }
-                });
+                TcpBufferHandlerWrapper bufferHandlerWrapper = new TcpBufferHandlerWrapper(
+                        buffer -> {
+                            try {
+                                ProtocolMessage<RpcResponse> rpcResponseProtocolMessage =
+                                        (ProtocolMessage<RpcResponse>) ProtocolMessageDecoder.decode(buffer);
+                                responseCompletableFuture.complete(rpcResponseProtocolMessage.getBody());
+                            } catch (IOException e) {
+                                throw new RuntimeException("协议消息解码错误");
+                            }
+                        }
+                );
+                socket.handler(bufferHandlerWrapper);
             } else {
-                System.err.println("Failed to connect to TCP server");
+                throw new RuntimeException("Failed to connect to TCP server");
             }
         });
         RpcResponse rpcResponse = responseCompletableFuture.get();
