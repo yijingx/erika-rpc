@@ -1,6 +1,7 @@
 package com.erika.erikarpc.config;
 
 import com.erika.erikarpc.fault.retry.RetryStrategyKeys;
+import com.erika.erikarpc.fault.tolerant.TolerantStrategyKeys;
 import com.erika.erikarpc.loadbalancer.LoadBalancerKeys;
 import com.erika.erikarpc.serializer.SerializerKeys;
 import lombok.Data;
@@ -21,4 +22,6 @@ public class RpcConfig {
     private String loadBalancer = LoadBalancerKeys.ROUND_ROBIN;
 
     private String retryStrategy = RetryStrategyKeys.FIXED_INTERVAL;
+
+    private String tolerantStrategy = TolerantStrategyKeys.FAIL_FAST;
 }

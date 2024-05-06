@@ -10,6 +10,8 @@ import com.erika.erikarpc.constant.ProtocolConstant;
 import com.erika.erikarpc.constant.RpcConstant;
 import com.erika.erikarpc.fault.retry.RetryStrategy;
 import com.erika.erikarpc.fault.retry.RetryStrategyFactory;
+import com.erika.erikarpc.fault.tolerant.TolerantStrategy;
+import com.erika.erikarpc.fault.tolerant.TolerantStrategyFactory;
 import com.erika.erikarpc.loadbalancer.LoadBalancer;
 import com.erika.erikarpc.loadbalancer.LoadBalancerFactory;
 import com.erika.erikarpc.model.RpcRequest;
@@ -43,33 +45,34 @@ public class ServiceProxy implements InvocationHandler {
                 .parameterTypes(method.getParameterTypes())
                 .args(args)
                 .build();
+
+        // get provider's address from service register
+        // 从注册中心获取服务提供者请求地址
+        RpcConfig rpcConfig = RpcApplication.getRpcConfig();
+        Registry registry = RegistryFactory.getInstance(rpcConfig.getRegistryConfig().getRegistry());
+        ServiceMetaInfo serviceMetaInfo = new ServiceMetaInfo();
+        serviceMetaInfo.setServiceName(serviceName);
+        serviceMetaInfo.setServiceVersion(RpcConstant.DEFAULT_SERVICE_VERSION);
+        List<ServiceMetaInfo> serviceMetaInfoList = registry.serviceDiscovery(serviceMetaInfo.getServiceKey());
+        if(CollUtil.isEmpty(serviceMetaInfoList)){
+            throw new RuntimeException("暂无服务地址");
+        }
+
+        LoadBalancer loadBalancer = LoadBalancerFactory.getInstance(rpcConfig.getLoadBalancer());
+        Map<String, Object> requestParams = new HashMap<>();
+        requestParams.put("methodName", rpcRequest.getMethodName());
+        ServiceMetaInfo selectedServiceMetaInfo = loadBalancer.select(requestParams,serviceMetaInfoList);
+
+        RpcResponse rpcResponse;
         try{
-            byte[] bodyBytes = serializer.serialize(rpcRequest);
-            // get provider's address from service register
-            // 从注册中心获取服务提供者请求地址
-            RpcConfig rpcConfig = RpcApplication.getRpcConfig();
-            Registry registry = RegistryFactory.getInstance(rpcConfig.getRegistryConfig().getRegistry());
-            ServiceMetaInfo serviceMetaInfo = new ServiceMetaInfo();
-            serviceMetaInfo.setServiceName(serviceName);
-            serviceMetaInfo.setServiceVersion(RpcConstant.DEFAULT_SERVICE_VERSION);
-            List<ServiceMetaInfo> serviceMetaInfoList = registry.serviceDiscovery(serviceMetaInfo.getServiceKey());
-            if(CollUtil.isEmpty(serviceMetaInfoList)){
-                throw new RuntimeException("暂无服务地址");
-            }
-
-            LoadBalancer loadBalancer = LoadBalancerFactory.getInstance(rpcConfig.getLoadBalancer());
-            Map<String, Object> requestParams = new HashMap<>();
-            requestParams.put("methodName", rpcRequest.getMethodName());
-            ServiceMetaInfo selectedServiceMetaInfo = loadBalancer.select(requestParams,serviceMetaInfoList);
-
             RetryStrategy retryStrategy = RetryStrategyFactory.getInstance(rpcConfig.getRetryStrategy());
-            RpcResponse rpcResponse = retryStrategy.doRetry(()->
+            rpcResponse = retryStrategy.doRetry(()->
                     VertxTcpClient.doRequest(rpcRequest, selectedServiceMetaInfo)
             );
-            return rpcResponse.getData();
-        }catch (IOException e){
-            e.printStackTrace();
+        }catch (Exception e){
+            TolerantStrategy tolerantStrategy = TolerantStrategyFactory.getInstance(rpcConfig.getTolerantStrategy());
+            rpcResponse = tolerantStrategy.doTolerant(null, e);
         }
-        return null;
+        return rpcResponse.getData();
     }
 }
